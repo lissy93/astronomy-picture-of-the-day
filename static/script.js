@@ -13,9 +13,8 @@ const show = (el) => { if (el) el.style.display = 'block'; };
 
 /* Build the URL of the original APOD page for a date (YYYY-MM-DD). */
 const nasaPageUrl = (date) => {
-  if (!date) return 'https://apod.nasa.gov/';
-  const [y, m, d] = date.split('-');
-  return `https://apod.nasa.gov/apod/ap${y.slice(2)}${m}${d}.html`;
+  const base = 'https://science.nasa.gov/apod/';
+  return date ? `${base}?date=${encodeURIComponent(date)}` : base;
 };
 
 /* Format an ISO date as a human-readable, localised date. */
