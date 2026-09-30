@@ -6,12 +6,6 @@
   "repository": "https://github.com/Lissy93/go-apod",
   "logo": "https://i.ibb.co/0fv7k6T/milky-way.png",
   "success_url": "/",
-  "env": {
-    "NASA_API_KEY": {
-      "description": "Get your API key here: https://api.nasa.gov/",
-      "required": true
-    }
-  },
   "formation": {
     "web": {
       "quantity": 1,

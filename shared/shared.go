@@ -27,8 +27,7 @@ const cacheControl = "public, max-age=900, s-maxage=900"
 type Config struct {
 	Port               string        `envconfig:"PORT" default:"8080"`
 	CORSAllowedOrigins string        `envconfig:"CORS_ALLOWED_ORIGINS" default:"*"`
-	NASAAPIKey         string        `envconfig:"NASA_API_KEY" required:"true"`
-	NASABaseURL        string        `envconfig:"NASA_BASE_URL" default:"https://api.nasa.gov/planetary/apod"`
+	NASABaseURL        string        `envconfig:"NASA_BASE_URL" default:"https://science.nasa.gov/wp-json/wp/v2/apod-basic"`
 	CacheTTL           time.Duration `envconfig:"CACHE_TTL" default:"15m"`
 }
 
@@ -40,22 +39,19 @@ func NewConfig() (*Config, error) {
 	return &c, nil
 }
 
-// Response holds the fields NASA's APOD API can return. All are optional:
-// video days omit hdurl, "other" days omit url, and copyright is often absent.
+// Response is the JSON served at /apod, matching the old api.nasa.gov shape.
 type Response struct {
-	Copyright      string `json:"copyright,omitempty"`
-	Date           string `json:"date,omitempty"`
-	Explanation    string `json:"explanation,omitempty"`
-	HdURL          string `json:"hdurl,omitempty"`
-	MediaType      string `json:"media_type,omitempty"`
-	ServiceVersion string `json:"service_version,omitempty"`
-	Title          string `json:"title,omitempty"`
-	URL            string `json:"url,omitempty"`
-	ThumbnailURL   string `json:"thumbnail_url,omitempty"`
+	Copyright    string `json:"copyright,omitempty"`
+	Date         string `json:"date,omitempty"`
+	Explanation  string `json:"explanation,omitempty"`
+	HdURL        string `json:"hdurl,omitempty"`
+	MediaType    string `json:"media_type,omitempty"`
+	Title        string `json:"title,omitempty"`
+	URL          string `json:"url,omitempty"`
+	ThumbnailURL string `json:"thumbnail_url,omitempty"`
 }
 
-// image returns the best still-image URL to serve for /image, or "" when the
-// day has no representable image (media_type "other", or a video with no thumb).
+// image returns the still to serve at /image, or "" if the day has none.
 func (r *Response) image() string {
 	if r.MediaType == "video" {
 		return r.ThumbnailURL
@@ -89,8 +85,7 @@ var (
 	defaultErr  error
 )
 
-// Default returns a process-wide Service built from the environment, reused
-// across warm serverless invocations.
+// Default returns a process-wide Service, reused across warm serverless calls.
 func Default() (*Service, error) {
 	defaultOnce.Do(func() {
 		conf, err := NewConfig()
@@ -133,8 +128,7 @@ func (s *Service) corsOptions() cors.Options {
 	}
 }
 
-// Fetch returns the current APOD, served from a short-lived in-memory cache when
-// warm. Sending no date lets NASA pick the latest published picture.
+// Fetch returns the latest APOD, from the in-memory cache while it is fresh.
 func (s *Service) Fetch(ctx context.Context) (*Response, error) {
 	s.mu.Lock()
 	if s.cache != nil && time.Now().Before(s.expiry) {
@@ -149,8 +143,7 @@ func (s *Service) Fetch(ctx context.Context) (*Response, error) {
 		return nil, fmt.Errorf("invalid NASA base url: %w", err)
 	}
 	q := endpoint.Query()
-	q.Set("api_key", s.conf.NASAAPIKey)
-	q.Set("thumbs", "true")
+	q.Set("per_page", "1")
 	endpoint.RawQuery = q.Encode()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint.String(), nil)
@@ -161,28 +154,29 @@ func (s *Service) Fetch(ctx context.Context) (*Response, error) {
 
 	resp, err := s.client.Do(req)
 	if err != nil {
-		// The raw error embeds the request URL, which contains the API key.
-		log.Printf("apod: request failed: %s", s.redact(err))
-		return nil, errors.New("could not reach the APOD API")
+		return nil, fmt.Errorf("could not reach the APOD feed: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("APOD API returned status %d", resp.StatusCode)
+		return nil, fmt.Errorf("APOD feed returned status %d", resp.StatusCode)
 	}
 
-	var result Response
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, errors.New("could not decode the APOD API response")
+	var posts []feedPost
+	if err := json.NewDecoder(resp.Body).Decode(&posts); err != nil {
+		return nil, fmt.Errorf("could not decode the APOD feed: %w", err)
 	}
-	result.Copyright = strings.TrimSpace(result.Copyright)
+	if len(posts) == 0 {
+		return nil, errors.New("APOD feed returned no entries")
+	}
+	result := posts[0].toResponse()
 
 	s.mu.Lock()
-	s.cache = &result
+	s.cache = result
 	s.expiry = time.Now().Add(s.conf.CacheTTL)
 	s.mu.Unlock()
 
-	out := result
+	out := *result
 	return &out, nil
 }
 
@@ -191,7 +185,7 @@ func (s *Service) HandleApod() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		apod, err := s.Fetch(r.Context())
 		if err != nil {
-			log.Printf("apod: %s", s.redact(err))
+			log.Printf("apod: %v", err)
 			http.Error(w, http.StatusText(http.StatusBadGateway), http.StatusBadGateway)
 			return
 		}
@@ -204,13 +198,12 @@ func (s *Service) HandleApod() http.HandlerFunc {
 	}
 }
 
-// HandleImage proxies the current image, or a video day's thumbnail (NASA's
-// image host sends no CORS headers).
+// HandleImage proxies the current image, or a video day's thumbnail, from a stable URL.
 func (s *Service) HandleImage() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		apod, err := s.Fetch(r.Context())
 		if err != nil {
-			log.Printf("image: %s", s.redact(err))
+			log.Printf("image: %v", err)
 			http.Error(w, http.StatusText(http.StatusBadGateway), http.StatusBadGateway)
 			return
 		}
@@ -261,9 +254,4 @@ func StaticHandler(fsys http.FileSystem) http.HandlerFunc {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		fileServer.ServeHTTP(w, r)
 	}
-}
-
-// redact strips the API key from an error string so it is safe to log.
-func (s *Service) redact(err error) string {
-	return strings.ReplaceAll(err.Error(), s.conf.NASAAPIKey, "REDACTED")
 }

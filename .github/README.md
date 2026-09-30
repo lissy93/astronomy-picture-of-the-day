@@ -48,13 +48,13 @@ GET https://apod.as93.net/apod
 
 ```json
 {
-  "date": "2022-06-20",
-  "explanation": "There, just right of center, what is that? The surface of Mars keeps revealing new surprises with the recent discovery of finger-like rock spires. The small nearly-vertical rock outcrops were imaged last month by the robotic Curiosity rover on Mars. Although similar in size and shape to small snakes, the leading explanation for their origin is as conglomerations of small minerals left by water flowing through rock crevices. After these relatively dense minerals filled the crevices, they were left behind when the surrounding rock eroded away.  Famous rock outcrops on Earth with a similar origin are called hoodoos. NASA's Curiosity Rover continues to search for new signs of ancient water in Gale Crater on Mars, while also providing a geologic background important for future human exploration.   Explore Your Universe: Random APOD Generator",
-  "hdurl": "https://apod.nasa.gov/apod/image/2206/MarsFingers_Curiosity_1338.jpg",
+  "copyright": "Robert Eder",
+  "date": "2026-09-30",
+  "explanation": "Peculiar spiral galaxy Arp 78 is found within the boundaries of the head strong constellation Aries. Some 100 million light-years beyond the stars and nebulae of our Milky Way galaxy, the island universe is an enormous 200,000 light-years across. Also known as NGC 772, it sports a prominent, outer spiral arm in this detailed cosmic portrait. Tracking along sweeping dust lanes and lined with young blue star clusters, Arp 78's overdeveloped spiral arm is pumped-up by galactic-scale gravitational tides. Interactions with its brightest companion galaxy, the more compact NGC 770 seen directly below the larger spiral, are likely responsible. Embedded in faint star streams revealed in the deep telescopic exposure, NGC 770's fuzzy, elliptical appearance contrasts nicely with spiky foreground Milky Way stars.",
+  "hdurl": "https://assets.science.nasa.gov/dynamicimage/assets/science/cds/apod/apod/2026/october/NGC772_Robert_Eder.jpg?w=1772&h=1182&fit=clip&crop=faces%2Cfocalpoint",
   "media_type": "image",
-  "service_version": "v1",
-  "title": "Rock Fingers on Mars",
-  "url": "https://apod.nasa.gov/apod/image/2206/MarsFingers_Curiosity_960.jpg"
+  "title": "Arp 78: Peculiar Galaxy in Aries",
+  "url": "https://assets.science.nasa.gov/dynamicimage/assets/science/cds/apod/apod/2026/october/NGC772_Robert_Eder.jpg"
 }
 ```
 
@@ -83,27 +83,27 @@ GET https://apod.as93.net/apod
 ## Deployment
 
 > _Go-APOD can be self-hosted, either with Docker, via the 1-click Vercel or Heroku deployment, or by running the executable directly._<br>
-> A NASA API Key is required, which you can sign up for at [api.nasa.gov](https://api.nasa.gov/).
+> No API key is needed, data comes from NASA's public APOD feed on [science.nasa.gov](https://science.nasa.gov/apod/).
 
 ### Vercel
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FLissy93%2Fgo-apod&env=NASA_API_KEY&envDescription=Your%20NASA%20API%20key.%20It's%20free%2C%20get%20it%20at%20https%3A%2F%2Fapi.nasa.gov&envLink=https%3A%2F%2Fapi.nasa.gov&project-name=apod&repository-name=go-apod&demo-title=Go-APOD&demo-description=A%20demo%20is%20published%20to%20apod.as93.net&demo-url=https%3A%2F%2Fapod.as93.net%2F&demo-image=https%3A%2F%2Fraw.githubusercontent.com%2FLissy93%2Fgo-apod%2Fmaster%2Fstatic%2Fassets%2Fpwa%2Fapple-touch-icon.png)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FLissy93%2Fgo-apod&project-name=apod&repository-name=go-apod&demo-title=Go-APOD&demo-description=A%20demo%20is%20published%20to%20apod.as93.net&demo-url=https%3A%2F%2Fapod.as93.net%2F&demo-image=https%3A%2F%2Fraw.githubusercontent.com%2FLissy93%2Fgo-apod%2Fmaster%2Fstatic%2Fassets%2Fpwa%2Fapple-touch-icon.png)
 
 ### Heroku
 
 [![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/Lissy93/go-apod)
 
 ### Docker
-A multi-arch container is available on DockerHub, under [`lissy93/apod`](https://hub.docker.com/r/lissy93/apod), or GHCR  as [`ghcr.io/lissy93/go-apod`](https://github.com/Lissy93/go-apod/pkgs/container/go-apod).<br> Or, use this [`docker-compose.yml`](https://github.com/Lissy93/go-apod/blob/master/docker-compose.yml) template, and just populate with your API key and run `docker compose up`.
+A multi-arch container is available on DockerHub, under [`lissy93/apod`](https://hub.docker.com/r/lissy93/apod), or GHCR  as [`ghcr.io/lissy93/go-apod`](https://github.com/Lissy93/go-apod/pkgs/container/go-apod).<br> Or, use this [`docker-compose.yml`](https://github.com/Lissy93/go-apod/blob/master/docker-compose.yml) template, and run `docker compose up`.
 
 ```bash
-docker run -p 8080:8080 -e NASA_API_KEY='XXX' -d lissy93/apod
+docker run -p 8080:8080 -d lissy93/apod
 ```
 
 ### From Executable
 
 Each release has pre-compiled binaries attached for Windows, Mac and Linux, which can be run directly.
-From the [Releases Page](https://github.com/Lissy93/go-apod/releases), download and extract the version for your system, then execute it with: `NASA_API_KEY='XXX' ./go-apod`
+From the [Releases Page](https://github.com/Lissy93/go-apod/releases), download and extract the version for your system, then execute it with: `./go-apod`
 
 ### From Source
 
@@ -125,10 +125,9 @@ See the [Building Locally](#building-locally) section below
 
 ### Environmental Variables
 
-- `NASA_API_KEY` (Required) - Your API Key, you can sign up for one at [api.nasa.gov](https://api.nasa.gov/)
 - `PORT` (Optional) - The port to start the web server on, defaults to `8080`
 - `CORS_ALLOWED_ORIGINS` (Optional) - Comma-separated list of origins which can use the API, defaults to `*` / all
-- `NASA_BASE_URL` (Optional) - The base URL for upstream GET requests, defaults to NASA's APOD API
+- `NASA_BASE_URL` (Optional) - The upstream feed URL, defaults to NASA's `apod-basic` feed on science.nasa.gov
 - `CACHE_TTL` (Optional) - How long to cache NASA's response for, defaults to `15m`
 
 ---
