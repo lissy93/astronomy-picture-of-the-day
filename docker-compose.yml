@@ -1,5 +1,5 @@
 # Go-APOD - https://github.com/lissy93/go-apod
-# Set NASA_API_KEY (free from https://api.nasa.gov), then run: docker compose up -d
+# Run with: docker compose up -d
 services:
   apod:
     container_name: apod
@@ -9,9 +9,8 @@ services:
     # build: .
     ports:
       - "8080:8080"
-    environment:
-      - NASA_API_KEY=${NASA_API_KEY:?Set NASA_API_KEY - get one free at https://api.nasa.gov}
-      # Optional overrides:
-      # - CORS_ALLOWED_ORIGINS=https://example.com
-      # - CACHE_TTL=15m
+    # Optional overrides:
+    # environment:
+    #   - CORS_ALLOWED_ORIGINS=https://example.com
+    #   - CACHE_TTL=15m
     restart: unless-stopped

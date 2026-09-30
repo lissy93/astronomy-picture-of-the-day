@@ -34,6 +34,9 @@ const setLink = (href, text) => {
   show(link);
 };
 
+/* True for a direct video file link, rather than an embeddable player page. */
+const isVideoFile = (url) => /\.(mp4|webm|ogv|mov)([?#]|$)/i.test(url);
+
 /* Render the APOD response into the DOM, handling each media type. */
 const render = (apod) => {
   show(byId('apod-info'));
@@ -45,13 +48,17 @@ const render = (apod) => {
 
   const image = byId('apod-picture');
   const frame = byId('apod-dynamic-content');
-  hide(frame); // only shown for video days
+  const video = byId('apod-video');
+  hide(frame); hide(video); // only shown for video days
 
   if (apod.media_type === 'video' && apod.url) {
     hide(image);
-    frame.src = apod.url;
-    frame.title = apod.title || 'Astronomy Picture of the Day';
-    show(frame);
+    // Most APOD videos are now plain files, the rest are YouTube embeds.
+    const player = isVideoFile(apod.url) ? video : frame;
+    video.poster = apod.thumbnail_url || '';
+    player.src = apod.url;
+    player.title = apod.title || 'Astronomy Picture of the Day';
+    show(player);
     setLink(apod.url, 'Watch Video');
   } else if (apod.url || apod.hdurl) {
     setLink(apod.hdurl || apod.url, 'View HD Image');
